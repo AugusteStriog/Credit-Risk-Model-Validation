@@ -71,7 +71,6 @@ categorical_stats <- bank %>%
 #jpeg("categorical_statistics.jpg", width = 1024, height = 768)  
 #grid.draw(table_grob)
 #dev.off()
-3
 #create new variables using simple transformation and custom functions;
 # Create age groups
 new_var <- renamed_var %>%
@@ -121,7 +120,7 @@ corrplot(cor_matrix, method = "color",
          tl.srt = 45,  
          addCoef.col = "black", 
          number.cex = 1.5)  
-#dev.off()
+dev.off()
 
 # Age histogram plot
 age_histogram <- ggplot(bank, aes(x = age)) +
@@ -136,6 +135,38 @@ density_histogram <- ggplot(bank, aes(x = balance)) +
   ggtitle("Smoothed Histogram of Balance") +
   xlab("Balance") + ylab("Density")
 #ggsave("density_histogram.jpg", plot = density_histogram, width = 8, height = 6, units = "in")
+
+#Box plot of  balance by education and marital factors
+box_plot <- ggplot(bank, aes(x = education, y = balance)) + 
+  geom_boxplot() +
+  facet_wrap(~ marital, scales = "free_y") +  
+  labs(title = "Balance by Education Levels", x = "Education", y = "Balance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#ggsave("box_plot.jpg", plot = box_plot, width = 8, height = 6, units = "in")
+
+#Mosaic Plot of Education vs Marital Status
+tableMar <- table(bank$education, bank$marital)
+rowProportions <- prop.table(tableMar, 1) * 100
+colProportions <- prop.table(tableMar, 2) * 100
+row_desc <- apply(rowProportions, 2, function(x) paste(round(x, 3), "%"))
+col_desc <- apply(colProportions, 1, function(x) paste(round(x, 3), "%"))
+
+#jpeg("mosaic_plot.jpg", width = 800, height = 600)  
+
+mosaicplot(tableMar, main = "Mosaic Plot of Education vs Marital Status",
+           xlab = "Education", ylab = "Marital Status", color = TRUE)
+
+#dev.off()
+
+# Marital Status Distribution by Job and Education
+stacked_box <- ggplot(bank, aes(x = job, fill = marital)) +
+  geom_bar(position = "fill") +  
+  facet_wrap(~ education, scales = "free_y") + 
+  labs(x = "Job", title = "Marital Status Distribution by Job and Education", fill = "Marital Status") +
+  theme(axis.text.x = element_text(angle = 90))  
+
+#ggsave("stacked_box.jpg", plot = stacked_box, width = 10, height = 8, units = "in")
 
 # Bar chart for 'job' types
 bar_chart <- ggplot(bank, aes(x = job)) +
@@ -152,66 +183,19 @@ scatter_plot <- ggplot(bank, aes(x = age, y = balance)) +
   xlab("Age") + ylab("Balance")
 #ggsave("scatter_plot.jpg", plot = scatter_plot, width = 8, height = 6, units = "in")
 
-
-#Mosaic Plot of Education vs Marital Status
-tableMar <- table(bank$education, bank$marital)
-rowProportions <- prop.table(tableMar, 1) * 100
-colProportions <- prop.table(tableMar, 2) * 100
-row_desc <- apply(rowProportions, 2, function(x) paste(round(x, 3), "%"))
-col_desc <- apply(colProportions, 1, function(x) paste(round(x, 3), "%"))
-
-#jpeg("mosaic_plot.jpg", width = 800, height = 600)  
-
-mosaicplot(tableMar, main = "Mosaic Plot of Education vs Marital Status",
-           xlab = "Education", ylab = "Marital Status", color = TRUE)
-
-#dev.off()
-
-#Box plot of  balance by education and marital factors
-
-box_plot <- ggplot(bank, aes(x = education, y = balance)) + 
-  geom_boxplot() +
-  facet_wrap(~ marital, scales = "free_y") +  
-  labs(title = "Balance by Education Levels", x = "Education", y = "Balance") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#ggsave("box_plot.jpg", plot = box_plot, width = 8, height = 6, units = "in")
-
-
 #Balance and age group by y factor
 balance <- bank %>%
-mutate(age_group = cut(age, breaks = c(18, 25, 35, 50, 65, 100), labels = c("Under 25", "25-35", "36-50", "51-65", "Over 65")),
-       y = factor(y, levels = c("no", "yes")))  
-ggplot(balance, aes(x = age, y = balance, color = y)) + 
-  geom_point() + 
-  facet_wrap(~ age_group, scales = "free_y") + 
-  labs(x = "Age", y = "Balance", title = "Balance by Age Group") +
-  theme(axis.text.x = element_text(angle = 90))  
-balance_age_y <- ggplot(bank, aes(x = age, y = balance, color = y)) + 
+  mutate(age_group = cut(age, breaks = c(18, 25, 35, 50, 65, 100),
+                         labels = c("Under 25", "25-35", "36-50", "51-65", "Over 65")),
+         y = factor(y, levels = c("no", "yes")))
+
+balance_age_y <- ggplot(balance, aes(x = age, y = balance, color = y)) + 
   geom_point() + 
   facet_wrap(~ age_group, scales = "free_y") + 
   labs(x = "Age", y = "Balance", title = "Balance by Age Group") +
   theme(axis.text.x = element_text(angle = 90))
 
-ggsave("balance_age_y.jpg", plot = balance_age_y, width = 10, height = 8, units = "in")
-
-g <- ggplot(bank, aes(x = job, y = percentage, fill = marital, label = scales::percent(percentage))) +
-  geom_bar(stat = "identity") + 
-  facet_wrap(~ education, scales = "free_y") +  
-  labs(x = "Job", y = "Percentage", title = "Marital Status Distribution by Job and Education", fill = "Marital Status") +
-  theme(axis.text.x = element_text(angle = 90))  
-
-#ggsave("g.jpg", plot = g, width = 10, height = 8, units = "in")
-
-# Marital Status Distribution by Job and Education
-stacked_box <- ggplot(bank, aes(x = job, fill = marital)) +
-  geom_bar(position = "fill") +  
-  facet_wrap(~ education, scales = "free_y") + 
-  labs(x = "Job", title = "Marital Status Distribution by Job and Education", fill = "Marital Status") +
-  theme(axis.text.x = element_text(angle = 90))  
-
-#ggsave("stacked_box.jpg", plot = stacked_box, width = 10, height = 8, units = "in")
-
+#ggsave("balance_age_y.jpg", plot = balance_age_y, width = 10, height = 8, units = "in")
 
 # Distribution of Term Deposit Subscriptions Pie Chart
 pie <- bank %>%
@@ -226,8 +210,7 @@ pie_chart <- ggplot(pie, aes(x = "", y = Percentage, fill = y)) +
   theme_void() +  
   geom_text(aes(label = paste(round(Percentage, 1), "%")), position = position_stack(vjust = 0.5))+
   scale_fill_manual(values = c("#AED6F1", "#F1948A"))
-ggsave("pie_chart.jpg", plot = pie_chart, width = 8, height = 6, units = "in")
-
+#ggsave("pie_chart.jpg", plot = pie_chart, width = 8, height = 6, units = "in")
 
 
 #Perform a logistic regression to obtain the predicted probability that a customer has subscribed for a term deposit.
